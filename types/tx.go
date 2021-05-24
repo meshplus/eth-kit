@@ -2,12 +2,15 @@ package types
 
 import (
 	"fmt"
+	"math/big"
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
-	"io"
-	"math/big"
+	"golang.org/x/crypto/sha3"
 )
 
 // Transaction types.
@@ -15,6 +18,10 @@ const (
 	LegacyTxType = iota
 	AccessListTxType
 )
+
+var hasherPool = sync.Pool{
+	New: func() interface{} { return sha3.NewLegacyKeccak256() },
+}
 
 // TxData is the underlying data of a transaction.
 //
@@ -234,14 +241,13 @@ func PrefixedRlpHash(prefix byte, x interface{}) *common.Hash {
 	return &h
 }
 
-func RlpEncode(w io.Writer, val interface{}) error {
-	return rlp.Encode(w, val)
-}
-
-func RlpEncodeToBytes(val interface{}) ([]byte, error) {
-	return rlp.EncodeToBytes(val)
-}
-
-func RlpDecodeBytes(b []byte, val interface{}) error {
-	return rlp.DecodeBytes(b, val)
+// CallArgs represents the arguments for a call.
+type CallArgs struct {
+	From       *common.Address   `json:"from"`
+	To         *common.Address   `json:"to"`
+	Gas        *hexutil.Uint64   `json:"gas"`
+	GasPrice   *hexutil.Big      `json:"gasPrice"`
+	Value      *hexutil.Big      `json:"value"`
+	Data       *hexutil.Bytes    `json:"data"`
+	AccessList *types.AccessList `json:"accessList"`
 }
