@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
@@ -430,6 +431,9 @@ func (tx *EthTransaction) setDecoded(inner TxData, size int) {
 }
 
 func (e *EthTransaction) FromCallArgs(callArgs CallArgs) {
+	if callArgs.From == nil {
+		callArgs.From = &common.Address{}
+	}
 	if callArgs.From != nil {
 		e.from.Store(types.NewAddress(callArgs.From.Bytes()))
 	}
