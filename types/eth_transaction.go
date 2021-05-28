@@ -434,9 +434,7 @@ func (e *EthTransaction) FromCallArgs(callArgs CallArgs) {
 	if callArgs.From == nil {
 		callArgs.From = &common.Address{}
 	}
-	if callArgs.From != nil {
-		e.from.Store(types.NewAddress(callArgs.From.Bytes()))
-	}
+	e.from.Store(types.NewAddress(callArgs.From.Bytes()))
 
 	inner := &AccessListTx{
 		GasPrice: (*big.Int)(callArgs.GasPrice),
