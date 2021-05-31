@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/meshplus/eth-kit/ledger"
 )
 
 // ChainContext supports retrieving headers and consensus parameters from the
@@ -19,7 +20,7 @@ type ChainContext interface {
 }
 
 // NewEVMBlockContext creates a new context for use in the EVM.
-func NewEVMBlockContext(number uint64, timestamp uint64, db StateDB) BlockContext {
+func NewEVMBlockContext(number uint64, timestamp uint64, db ledger.StateDB, ledger ledger.ChainLedger) BlockContext {
 	// If we don't have an explicit author (i.e. not mining), extract from the header
 	// var beneficiary common.Address
 	// if author == nil {
@@ -30,7 +31,7 @@ func NewEVMBlockContext(number uint64, timestamp uint64, db StateDB) BlockContex
 	return BlockContext{
 		CanTransfer: CanTransfer,
 		Transfer:    Transfer,
-		GetHash:     GetHashFn(db),
+		GetHash:     GetHashFn(ledger),
 		Coinbase:    common.HexToAddress("0x0000000000000000000000000000000000000000"),
 		BlockNumber: new(big.Int).SetUint64(number),
 		Time:        new(big.Int).SetUint64(timestamp),
@@ -48,20 +49,24 @@ func NewEVMTxContext(msg types.Message) TxContext {
 }
 
 // GetHashFn returns a GetHashFunc which retrieves header hashes by number
-func GetHashFn(db StateDB) func(n uint64) common.Hash {
+func GetHashFn(ledger ledger.ChainLedger) func(n uint64) common.Hash {
 	return func(n uint64) common.Hash {
-		return db.GetBlockEVMHash(n)
+		hash := ledger.GetBlockHash(n)
+		if hash == nil {
+			return common.Hash{}
+		}
+		return common.BytesToHash(hash.RawHash[:])
 	}
 }
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.
 // This does not take the necessary gas in to account to make the transfer valid.
-func CanTransfer(db StateDB, addr common.Address, amount *big.Int) bool {
+func CanTransfer(db ledger.StateDB, addr common.Address, amount *big.Int) bool {
 	return db.GetEVMBalance(addr).Cmp(amount) >= 0
 }
 
 // Transfer subtracts amount from sender and adds amount to recipient using the given Db
-func Transfer(db StateDB, sender, recipient common.Address, amount *big.Int) {
+func Transfer(db ledger.StateDB, sender, recipient common.Address, amount *big.Int) {
 	db.SubEVMBalance(sender, amount)
 	db.AddEVMBalance(recipient, amount)
 }
