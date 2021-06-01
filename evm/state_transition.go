@@ -21,6 +21,8 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/meshplus/eth-kit/ledger"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -53,7 +55,7 @@ type StateTransition struct {
 	initialGas uint64
 	value      *big.Int
 	data       []byte
-	state      StateDB
+	state      ledger.StateDB
 	evm        *EVM
 }
 
