@@ -160,8 +160,8 @@ func (e *EthTransaction) GetNonce() uint64 {
 	return e.inner.GetNonce()
 }
 
-func (e *EthTransaction) GetAmount() uint64 {
-	return e.inner.GetValue().Uint64()
+func (e *EthTransaction) GetAmount() *big.Int {
+	return e.inner.GetValue()
 }
 
 func (e *EthTransaction) GetTimeStamp() int64 {
