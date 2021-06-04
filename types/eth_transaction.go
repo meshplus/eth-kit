@@ -160,7 +160,7 @@ func (e *EthTransaction) GetNonce() uint64 {
 	return e.inner.GetNonce()
 }
 
-func (e *EthTransaction) GetAmount() *big.Int {
+func (e *EthTransaction) GetValue() *big.Int {
 	return e.inner.GetValue()
 }
 
