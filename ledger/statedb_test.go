@@ -24,17 +24,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/ethdb"
-	"github.com/ethereum/go-ethereum/trie"
-	"github.com/stretchr/testify/require"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/trie"
 	types2 "github.com/meshplus/bitxhub-kit/types"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Tests that updating a state trie does not leak any database writes prior to
@@ -104,16 +101,18 @@ func TestIntermediateLeaks(t *testing.T) {
 		modify(finalState, types2.NewAddress([]byte{i}), i, 99)
 	}
 
+	_, stateRoot := transState.FlushDirtyData()
 	// Commit and cross check the databases.
-	transRoot, err := transState.Commit(0, nil, nil)
+	err := transState.Commit(0, nil, stateRoot)
 	if err != nil {
 		t.Fatalf("failed to commit transition state: %v", err)
 	}
-	if err = transState.Database().TrieDB().Commit(common.BytesToHash(transRoot.Bytes()), false, nil); err != nil {
-		t.Errorf("can not commit trie %v to persistent database", transRoot.String())
+	if err = transState.Database().TrieDB().Commit(common.BytesToHash(stateRoot.Bytes()), false, nil); err != nil {
+		t.Errorf("can not commit trie %v to persistent database", stateRoot.String())
 	}
 
-	finalRoot, err := finalState.Commit(0, nil, nil)
+	_, finalRoot := finalState.FlushDirtyData()
+	err = finalState.Commit(0, nil, finalRoot)
 	if err != nil {
 		t.Fatalf("failed to commit final state: %v", err)
 	}
@@ -163,15 +162,15 @@ func TestNew(t *testing.T) {
 
 	transState.SetState(addr, []byte("key"), []byte("value"))
 
-	transState.FlushDirtyDataAndComputeJournal()
-	root, err := transState.Commit(0, nil, nil)
+	_, transRoot := transState.FlushDirtyData()
+	err := transState.Commit(0, nil, transRoot)
 	assert.Nil(t, err)
-	err = transState.Database().TrieDB().Commit(common.BytesToHash(root.Bytes()), false, nil)
+	err = transState.Database().TrieDB().Commit(common.BytesToHash(transRoot.Bytes()), false, nil)
 	assert.Nil(t, err)
 
 	transState.Clear()
 
-	transState, err = New(root, state.NewDatabase(transDb), nil)
+	transState, err = New(transRoot, state.NewDatabase(transDb), nil)
 	assert.Nil(t, err)
 
 	ok, val := transState.GetState(addr, []byte("key"))
@@ -188,23 +187,21 @@ func TestNew2(t *testing.T) {
 
 	addr := types2.NewAddress([]byte{1})
 	transState.SetState(addr, []byte("key"), []byte("value"))
-	_, _ = transState.Commit(0, nil, nil)
+	_, transRoot := transState.FlushDirtyData()
+	_ = transState.Commit(0, nil, transRoot)
+
 	transState.SetState(addr, []byte("key1"), []byte("value2"))
-	root2, _ := transState.Commit(0, nil, nil)
+	_, transRoot2 := transState.FlushDirtyData()
+	_ = transState.Commit(0, nil, transRoot2)
 	//err := transState.Database().TrieDB().Commit(common.BytesToHash(root2.Bytes()), false, nil)
 	//assert.Nil(t, err)
 
-	transState1, err := transState1.StateAt(root2)
+	transState1, err := transState1.StateAt(transRoot2)
 	assert.Nil(t, err)
 	acc := transState1.GetAccount(addr).(*StateObject)
 	ok, val := acc.GetState([]byte("key"))
 	fmt.Println(string(val))
 	fmt.Println(ok)
-
-	//transState.Clear()
-
-	//ok, val := transState.GetState(addr, []byte("key"))
-
 }
 
 func TestNew3(t *testing.T) {
@@ -228,8 +225,10 @@ func TestNew3(t *testing.T) {
 	transState.SetState(addr, []byte("key"), []byte("value"))
 	transState.SetState(addr, []byte("key1"), []byte("value2"))
 	transState.SetState(addr, []byte("abc"), []byte("value2"))
-	rootState, _ := transState.Commit(0, nil, nil)
-	err = transState.Database().TrieDB().Commit(common.BytesToHash(rootState.Bytes()), false, nil)
+	_, stateRoot := transState.FlushDirtyData()
+	_ = transState.Commit(0, nil, stateRoot)
+
+	err = transState.Database().TrieDB().Commit(common.BytesToHash(stateRoot.Bytes()), false, nil)
 	assert.Nil(t, err)
 	//
 	//transState.Close()

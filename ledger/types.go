@@ -9,35 +9,11 @@ import (
 	"github.com/meshplus/bitxhub-model/pb"
 )
 
-type BlockData struct {
-	Block          *pb.Block
-	Receipts       []*pb.Receipt
-	Accounts       map[string]IAccount
-	Journal        *BlockJournal
-	InterchainMeta *pb.InterchainMeta
-	TxHashList     []*types.Hash
-}
-
-type BlockJournal struct {
-	Journals    []*Journal
-	ChangedHash *types.Hash
-}
-
-type Journal struct {
-	Address        *types.Address
-	PrevAccount    *InnerAccount
-	AccountChanged bool
-	PrevStates     map[string][]byte
-	PrevCode       []byte
-	CodeChanged    bool
-}
-
 //go:generate mockgen -destination mock_ledger/mock_state_ledger.go -package mock_ledger -source types.go
 type StateLedger interface {
 	StateAccessor
-	StateDB
 
-	StateDB() StateDB
+	StateDB
 
 	// AddEvent
 	AddEvent(*pb.Event)
@@ -45,13 +21,14 @@ type StateLedger interface {
 	// Events
 	Events(txHash string) []*pb.Event
 
+	AddLog(log *pb.EvmLog)
+
+	GetLogs(types.Hash) []*pb.EvmLog
+
 	// Rollback
 	RollbackState(height uint64) error
 
-	// RemoveJournalsBeforeBlock
-	RemoveJournalsBeforeBlock(height uint64) error
-
-	PrepareBlock(*types.Hash)
+	PrepareBlock(*types.Hash, uint64)
 
 	ClearChangerAndRefund()
 
@@ -59,6 +36,9 @@ type StateLedger interface {
 	Close()
 
 	Finalise(bool)
+
+	// Version
+	Version() uint64
 }
 
 // StateAccessor manipulates the state data
@@ -100,15 +80,10 @@ type StateAccessor interface {
 	QueryByPrefix(address *types.Address, prefix string) (bool, [][]byte)
 
 	// Commit commits the state data
-	Commit(height uint64, accounts map[string]IAccount, blockJournal *BlockJournal) (*types.Hash, error)
+	Commit(height uint64, accounts map[string]IAccount, stateRoot *types.Hash) error
 
-	// FlushDirtyDataAndComputeJournal flushes the dirty data and computes block journal
-	FlushDirtyDataAndComputeJournal() (map[string]IAccount, *BlockJournal)
-
-	// Version
-	Version() uint64
-
-	GetLogs(types.Hash) []*pb.EvmLog
+	// FlushDirtyData flushes the dirty data
+	FlushDirtyData() (map[string]IAccount, *types.Hash)
 
 	// Clear
 	Clear()
@@ -179,10 +154,10 @@ type StateDB interface {
 	SuisideEVM(common.Address) bool
 	HasSuisideEVM(common.Address) bool
 
-	// Exist reports whether the given account exists in state.
+	// Exist reports whether the given Account exists in state.
 	// Notably this should also return true for suicided accounts.
 	ExistEVM(common.Address) bool
-	// Empty returns whether the given account is empty. Empty
+	// Empty returns whether the given Account is empty. Empty
 	// is defined according to EIP161 (balance = nonce = code = 0).
 	EmptyEVM(common.Address) bool
 

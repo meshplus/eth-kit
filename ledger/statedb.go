@@ -83,6 +83,7 @@ type ComplexStateLedger struct {
 	refund uint64
 
 	thash, bhash *types2.Hash
+	height       uint64
 	txIndex      int
 	logs         map[string][]*pb.EvmLog
 	logSize      uint
@@ -98,6 +99,7 @@ type ComplexStateLedger struct {
 	journal        *journal
 	validRevisions []revision
 	nextRevisionId int
+	logger         logrus.FieldLogger
 }
 
 func (l *ComplexStateLedger) GetMaxHeight() uint64 {
@@ -117,7 +119,7 @@ func (s *ComplexStateLedger) GetOrCreateAccount(address *types2.Address) IAccoun
 }
 
 func (s *ComplexStateLedger) GetAccount(address *types2.Address) IAccount {
-	return s.GetOrCreateAccount(address)
+	return s.getStateObject(address)
 }
 
 func (s *ComplexStateLedger) GetBalance(address *types2.Address) *big.Int {
@@ -196,14 +198,14 @@ func (s *ComplexStateLedger) QueryByPrefix(address *types2.Address, prefix strin
 	return false, nil
 }
 
-func (s *ComplexStateLedger) FlushDirtyDataAndComputeJournal() (map[string]IAccount, *BlockJournal) {
+func (s *ComplexStateLedger) FlushDirtyData() (map[string]IAccount, *types2.Hash) {
 	accounts := make(map[string]IAccount)
 
 	if s.dbErr != nil {
 		return nil, nil
 	}
 	// Finalize any pending changes and merge everything into the tries
-	s.IntermediateRoot(false)
+	s.IntermediateRoot(true)
 
 	// Commit objects to the trie, measuring the elapsed time
 	codeWriter := s.db.TrieDB().DiskDB().NewBatch()
@@ -245,12 +247,7 @@ func (s *ComplexStateLedger) FlushDirtyDataAndComputeJournal() (map[string]IAcco
 		return nil, nil
 	}
 
-	blockJournal := &BlockJournal{
-		Journals:    nil,
-		ChangedHash: types2.NewHash(root.Bytes()),
-	}
-
-	return accounts, blockJournal
+	return accounts, types2.NewHash(root.Bytes())
 }
 
 func (s *ComplexStateLedger) Version() uint64 {
@@ -284,16 +281,13 @@ func (s *ComplexStateLedger) Events(txHash string) []*pb.Event {
 }
 
 func (s *ComplexStateLedger) Rollback(height uint64) error {
-	panic("implement me")
+	return nil
 }
 
-func (s *ComplexStateLedger) RemoveJournalsBeforeBlock(height uint64) error {
-	panic("implement me")
-}
-
-func (s *ComplexStateLedger) PrepareBlock(hash *types2.Hash) {
+func (s *ComplexStateLedger) PrepareBlock(hash *types2.Hash, height uint64) {
 	s.logs = make(map[string][]*pb.EvmLog)
 	s.bhash = hash
+	s.height = height
 }
 
 func (s *ComplexStateLedger) ClearChangerAndRefund() {
@@ -328,6 +322,7 @@ func New(root *types2.Hash, db state.Database, logger logrus.FieldLogger) (*Comp
 		journal:             newJournal(),
 		accessList:          NewAccessList(),
 		hasher:              crypto.NewKeccakState(),
+		logger:              logger,
 	}
 	return sdb, nil
 }
@@ -350,6 +345,7 @@ func (s *ComplexStateLedger) AddLog(log *pb.EvmLog) {
 	log.BlockHash = s.bhash
 	log.TxIndex = uint64(s.txIndex)
 	log.Index = uint64(s.logSize)
+	log.BlockNumber = s.height
 	s.logs[s.thash.String()] = append(s.logs[s.thash.String()], log)
 	s.logSize++
 }
@@ -593,6 +589,8 @@ func (s *ComplexStateLedger) Snapshot() int {
 
 // RevertToSnapshot reverts all state changes made since the given revision.
 func (s *ComplexStateLedger) RevertToSnapshot(revid int) {
+	s.logger.Warnf("revert tx %s", s.thash.String())
+
 	// Find the snapshot in the stack of valid snapshots.
 	idx := sort.Search(len(s.validRevisions), func(i int) bool {
 		return s.validRevisions[i].id >= revid
@@ -686,9 +684,8 @@ func (s *ComplexStateLedger) clearJournalAndRefund() {
 }
 
 // Commit writes the state to the underlying in-memory trie database.
-func (s *ComplexStateLedger) Commit(height uint64, accounts map[string]IAccount, blockJournal *BlockJournal) (*types2.Hash, error) {
-	err := s.db.TrieDB().Commit(common.BytesToHash(blockJournal.ChangedHash.Bytes()), false, nil)
-	return blockJournal.ChangedHash, err
+func (s *ComplexStateLedger) Commit(height uint64, accounts map[string]IAccount, stateRoot *types2.Hash) error {
+	return s.db.TrieDB().Commit(common.BytesToHash(stateRoot.Bytes()), false, nil)
 }
 
 // PrepareAccessList handles the preparatory steps for executing a state transition with
@@ -753,5 +750,21 @@ func (s *ComplexStateLedger) SlotInAccessList(addr types2.Address, slot types2.H
 }
 
 func (s *ComplexStateLedger) StateAt(root *types2.Hash) (*ComplexStateLedger, error) {
-	return New(root, s.db, nil)
+	return New(root, s.db, s.logger)
+}
+
+func (s *ComplexStateLedger) Copy() *ComplexStateLedger {
+	return &ComplexStateLedger{
+		db:                  s.db,
+		trie:                s.db.CopyTrie(s.trie),
+		stateObjects:        make(map[string]*StateObject),
+		stateObjectsPending: make(map[string]struct{}),
+		stateObjectsDirty:   make(map[string]struct{}),
+		logs:                make(map[string][]*pb.EvmLog),
+		preimages:           make(map[string][]byte),
+		refund:              s.refund,
+		logSize:             s.logSize,
+		journal:             newJournal(),
+		hasher:              crypto.NewKeccakState(),
+	}
 }
