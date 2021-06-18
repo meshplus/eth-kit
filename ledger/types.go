@@ -35,6 +35,8 @@ type StateLedger interface {
 	// Close release resource
 	Close()
 
+	Copy() StateLedger
+
 	Finalise(bool)
 
 	// Version

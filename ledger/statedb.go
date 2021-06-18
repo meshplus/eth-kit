@@ -753,7 +753,7 @@ func (s *ComplexStateLedger) StateAt(root *types2.Hash) (*ComplexStateLedger, er
 	return New(root, s.db, s.logger)
 }
 
-func (s *ComplexStateLedger) Copy() *ComplexStateLedger {
+func (s *ComplexStateLedger) Copy() StateLedger {
 	return &ComplexStateLedger{
 		db:                  s.db,
 		trie:                s.db.CopyTrie(s.trie),
