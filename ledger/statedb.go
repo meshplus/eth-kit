@@ -766,5 +766,7 @@ func (s *ComplexStateLedger) Copy() *ComplexStateLedger {
 		logSize:             s.logSize,
 		journal:             newJournal(),
 		hasher:              crypto.NewKeccakState(),
+		accessList:          NewAccessList(),
+		logger:              s.logger,
 	}
 }
