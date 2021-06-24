@@ -204,10 +204,7 @@ func TestNew2(t *testing.T) {
 	fmt.Println(ok)
 }
 
-func TestNew3(t *testing.T) {
-	//transDb := rawdb.NewMemoryDatabase()
-	//db := state.NewDatabase(transDb)
-
+func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	root, err := ioutil.TempDir("", "TestChainLedger")
 	require.Nil(t, err)
 	storage, err := rawdb.NewLevelDBDatabase(filepath.Join(root, "ledger"), 0, 0, "", false)
@@ -230,19 +227,6 @@ func TestNew3(t *testing.T) {
 
 	err = transState.Database().TrieDB().Commit(common.BytesToHash(stateRoot.Bytes()), false, nil)
 	assert.Nil(t, err)
-	//
-	//transState.Close()
-	//
-	//storage, err = rawdb.NewLevelDBDatabase(filepath.Join(root, "ledger"), 0, 0, "", false)
-	//assert.Nil(t, err)
-	//db = state.NewDatabaseWithConfig(storage.(ethdb.Database), &trie.Config{
-	//	Cache:     256,
-	//	Journal:   "",
-	//	Preimages: false,
-	//})
-	//
-	//transState, err = New(rootState, db, nil)
-	//assert.Nil(t, err)
 
 	acc := transState.getStateObject(addr)
 	ok, val := acc.GetState([]byte("key"))
