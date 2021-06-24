@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	etherTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
@@ -199,6 +200,14 @@ func (e *EthTransaction) GetGas() uint64 {
 
 func (e *EthTransaction) GetGasPrice() *big.Int {
 	return e.inner.GetGasPrice()
+}
+
+func (e *EthTransaction) GetGasFeeCap() *big.Int {
+	return e.inner.GetGasFeeCap()
+}
+
+func (e *EthTransaction) GetGasTipCap() *big.Int {
+	return e.inner.GetGasTipCap()
 }
 
 func (e *EthTransaction) GetChainID() *big.Int {
@@ -416,6 +425,10 @@ func (tx *EthTransaction) decodeTyped(b []byte) (TxData, error) {
 		var inner AccessListTx
 		err := rlp.DecodeBytes(b[1:], &inner)
 		return &inner, err
+	case DynamicFeeTxType:
+		var inner DynamicFeeTx
+		err := rlp.DecodeBytes(b[1:], &inner)
+		return &inner, err
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}
@@ -463,4 +476,28 @@ func (e *EthTransaction) FromCallArgs(callArgs CallArgs) {
 	}
 
 	e.inner = inner
+}
+
+func (tx *EthTransaction) ToMessage() etherTypes.Message {
+	from := common.BytesToAddress(tx.GetFrom().Bytes())
+	var to *common.Address
+	if tx.GetTo() != nil {
+		toAddr := common.BytesToAddress(tx.GetTo().Bytes())
+		to = &toAddr
+	}
+	nonce := tx.GetNonce()
+	amount := tx.GetValue()
+	gas := tx.GetGas()
+	gasPrice := new(big.Int).Set(tx.GetGasPrice())
+	gasFeeCap := new(big.Int).Set(tx.GetGasFeeCap())
+	gasTipCap := new(big.Int).Set(tx.GetGasTipCap())
+	data := tx.GetPayload()
+	accessList := tx.GetInner().GetAccessList()
+
+	checkNonce := true
+	if v, _, _ := tx.GetRawSignature(); v == nil {
+		checkNonce = false
+	}
+
+	return etherTypes.NewMessage(from, to, nonce, amount, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, checkNonce)
 }

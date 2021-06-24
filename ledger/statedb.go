@@ -234,7 +234,7 @@ func (s *ComplexStateLedger) FlushDirtyData() (map[string]IAccount, *types2.Hash
 	// The onleaf func is called _serially_, so we can reuse the same account
 	// for unmarshalling every time.
 	account := &Account{}
-	root, err := s.trie.Commit(func(path []byte, leaf []byte, parent common.Hash) error {
+	root, err := s.trie.Commit(func(_ [][]byte, _ []byte, leaf []byte, parent common.Hash) error {
 		if err := account.Unmarshal(leaf); err != nil {
 			return nil
 		}
