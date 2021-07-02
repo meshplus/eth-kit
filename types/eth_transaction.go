@@ -513,18 +513,17 @@ func (tx *EthTransaction) MarshalJSON() ([]byte, error) {
 
 	}
 	jsonM["type"] = tx.GetType()
-	jsonM["Gas"] = tx.GetGas()
-	jsonM["GasPrice"] = tx.GetGasPrice()
-	jsonM["GasTipCap"] = tx.GetGasTipCap()
-	jsonM["GasFeeCap"] = tx.GetGasFeeCap()
-	jsonM["Type"] = tx.GetType()
-	jsonM["Nonce"] = tx.GetNonce()
-	jsonM["Value"] = tx.GetValue()
-	jsonM["Hash"] = tx.GetHash()
-	jsonM["ChainID"] = tx.GetChainID()
-	jsonM["TimeStamp"] = tx.GetTimeStamp()
-	jsonM["Signature"] = hexutil.Encode(tx.GetSignature())
-	jsonM["EthTx"] = true
+	jsonM["gas"] = tx.GetGas()
+	jsonM["gasPrice"] = tx.GetGasPrice()
+	jsonM["gasTipCap"] = tx.GetGasTipCap()
+	jsonM["gasFeeCap"] = tx.GetGasFeeCap()
+	jsonM["nonce"] = tx.GetNonce()
+	jsonM["value"] = tx.GetValue()
+	jsonM["hash"] = tx.GetHash()
+	jsonM["chainId"] = tx.GetChainID()
+	jsonM["timestamp"] = tx.GetTimeStamp()
+	jsonM["signature"] = hexutil.Encode(tx.GetSignature())
+	jsonM["ethTx"] = true
 
 	return json.Marshal(jsonM)
 }
