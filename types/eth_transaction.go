@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/big"
@@ -12,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	etherTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/meshplus/bitxhub-kit/hexutil"
 	"github.com/meshplus/bitxhub-kit/types"
 	"github.com/meshplus/bitxhub-model/pb"
 )
@@ -500,4 +502,29 @@ func (tx *EthTransaction) ToMessage() etherTypes.Message {
 	}
 
 	return etherTypes.NewMessage(from, to, nonce, amount, gas, gasPrice, gasFeeCap, gasTipCap, data, accessList, checkNonce)
+}
+
+func (tx *EthTransaction) MarshalJSON() ([]byte, error) {
+	jsonM := make(map[string]interface{})
+
+	jsonM["from"] = tx.GetFrom().String()
+	if tx.GetTo() != nil {
+		jsonM["to"] = tx.GetTo().String()
+
+	}
+	jsonM["type"] = tx.GetType()
+	jsonM["Gas"] = tx.GetGas()
+	jsonM["GasPrice"] = tx.GetGasPrice()
+	jsonM["GasTipCap"] = tx.GetGasTipCap()
+	jsonM["GasFeeCap"] = tx.GetGasFeeCap()
+	jsonM["Type"] = tx.GetType()
+	jsonM["Nonce"] = tx.GetNonce()
+	jsonM["Value"] = tx.GetValue()
+	jsonM["Hash"] = tx.GetHash()
+	jsonM["ChainID"] = tx.GetChainID()
+	jsonM["TimeStamp"] = tx.GetTimeStamp()
+	jsonM["Signature"] = hexutil.Encode(tx.GetSignature())
+	jsonM["EthTx"] = true
+
+	return json.Marshal(jsonM)
 }
