@@ -47,8 +47,8 @@ func InitEIP155Signer(chainId *big.Int) {
 
 // Transaction is an Ethereum transaction.
 type EthTransaction struct {
-	inner TxData    // Consensus contents of a transaction
-	time  time.Time // Time first seen locally (spam avoidance)
+	Inner TxData    // Consensus contents of a transaction
+	Time  time.Time // Time first seen locally (spam avoidance)
 
 	// caches
 	hash atomic.Value
@@ -68,12 +68,12 @@ func (e *EthTransaction) GetVersion() []byte {
 }
 
 func (e *EthTransaction) GetInner() TxData {
-	return e.inner
+	return e.Inner
 }
 
 // Protected says whether the transaction is replay-protected.
 func (e *EthTransaction) Protected() bool {
-	switch tx := e.inner.(type) {
+	switch tx := e.Inner.(type) {
 	case *LegacyTx:
 		return tx.V != nil && isProtectedV(tx.V)
 	default:
@@ -121,8 +121,8 @@ func (e *EthTransaction) sender() (*types.Address, error) {
 				e.GetNonce(),
 				e.GetGasPrice(),
 				e.GetGas(),
-				e.inner.GetTo(),
-				e.inner.GetValue(),
+				e.Inner.GetTo(),
+				e.Inner.GetValue(),
 				e.GetPayload(),
 			})
 			addr, err := recoverPlain(types.NewHash(hash.Bytes()), R, S, V, true)
@@ -147,26 +147,26 @@ func (e *EthTransaction) sender() (*types.Address, error) {
 }
 
 func (e *EthTransaction) GetTo() *types.Address {
-	if e.inner.GetTo() == nil {
+	if e.Inner.GetTo() == nil {
 		return nil
 	}
-	return types.NewAddress(e.inner.GetTo().Bytes())
+	return types.NewAddress(e.Inner.GetTo().Bytes())
 }
 
 func (e *EthTransaction) GetPayload() []byte {
-	return e.inner.GetData()
+	return e.Inner.GetData()
 }
 
 func (e *EthTransaction) GetNonce() uint64 {
-	return e.inner.GetNonce()
+	return e.Inner.GetNonce()
 }
 
 func (e *EthTransaction) GetValue() *big.Int {
-	return e.inner.GetValue()
+	return e.Inner.GetValue()
 }
 
 func (e *EthTransaction) GetTimeStamp() int64 {
-	return e.time.UnixNano()
+	return e.Time.UnixNano()
 }
 
 func (e *EthTransaction) GetHash() *types.Hash {
@@ -176,10 +176,10 @@ func (e *EthTransaction) GetHash() *types.Hash {
 
 	var h *types.Hash
 	if e.GetType() == LegacyTxType {
-		hash := RlpHash(e.inner)
+		hash := RlpHash(e.Inner)
 		h = types.NewHash(hash.Bytes())
 	} else {
-		hash := PrefixedRlpHash(e.GetType(), e.inner)
+		hash := PrefixedRlpHash(e.GetType(), e.Inner)
 		h = types.NewHash(hash.Bytes())
 	}
 	e.hash.Store(h)
@@ -195,23 +195,23 @@ func (e *EthTransaction) GetExtra() []byte {
 }
 
 func (e *EthTransaction) GetGas() uint64 {
-	return e.inner.GetGas()
+	return e.Inner.GetGas()
 }
 
 func (e *EthTransaction) GetGasPrice() *big.Int {
-	return e.inner.GetGasPrice()
+	return e.Inner.GetGasPrice()
 }
 
 func (e *EthTransaction) GetGasFeeCap() *big.Int {
-	return e.inner.GetGasFeeCap()
+	return e.Inner.GetGasFeeCap()
 }
 
 func (e *EthTransaction) GetGasTipCap() *big.Int {
-	return e.inner.GetGasTipCap()
+	return e.Inner.GetGasTipCap()
 }
 
 func (e *EthTransaction) GetChainID() *big.Int {
-	return e.inner.GetChainID()
+	return e.Inner.GetChainID()
 }
 
 func (e *EthTransaction) MarshalWithFlag() ([]byte, error) {
@@ -230,7 +230,7 @@ func (e *EthTransaction) Size() int {
 		return size.(int)
 	}
 	c := writeCounter(0)
-	rlp.Encode(&c, &e.inner)
+	rlp.Encode(&c, &e.Inner)
 	e.size.Store(int(c))
 	return int(c)
 }
@@ -252,7 +252,7 @@ func (e *EthTransaction) Unmarshal(buf []byte) error {
 
 // Type returns the transaction type.
 func (e *EthTransaction) GetType() byte {
-	return e.inner.TxType()
+	return e.Inner.TxType()
 }
 
 func (e *EthTransaction) SizeWithFlag() int {
@@ -261,7 +261,7 @@ func (e *EthTransaction) SizeWithFlag() int {
 
 func (e *EthTransaction) GetSignature() []byte {
 	var sig []byte
-	v, r, s := e.inner.RawSignatureValues()
+	v, r, s := e.Inner.RawSignatureValues()
 	sig = append(sig, r.Bytes()...)
 	sig = append(sig, s.Bytes()...)
 	sig = append(sig, v.Bytes()...)
@@ -276,8 +276,8 @@ func (e *EthTransaction) GetSignHash() *types.Hash {
 			e.GetNonce(),
 			e.GetGasPrice(),
 			e.GetGas(),
-			e.inner.GetTo(),
-			e.inner.GetValue(),
+			e.Inner.GetTo(),
+			e.Inner.GetValue(),
 			e.GetPayload(),
 			signer.chainId, uint(0), uint(0),
 		})
@@ -291,10 +291,10 @@ func (e *EthTransaction) GetSignHash() *types.Hash {
 				e.GetNonce(),
 				e.GetGasPrice(),
 				e.GetGas(),
-				e.inner.GetTo(),
-				e.inner.GetValue(),
+				e.Inner.GetTo(),
+				e.Inner.GetValue(),
 				e.GetPayload(),
-				e.inner.GetAccessList(),
+				e.Inner.GetAccessList(),
 			})
 
 		return types.NewHash(hash.Bytes())
@@ -314,7 +314,7 @@ func (e *EthTransaction) IsIBTP() bool {
 // RawSignatureValues returns the V, R, S signature values of the transaction.
 // The return values should not be modified by the caller.
 func (e *EthTransaction) GetRawSignature() (v, r, s *big.Int) {
-	return e.inner.RawSignatureValues()
+	return e.Inner.RawSignatureValues()
 }
 
 func (e *EthTransaction) VerifySignature() error {
@@ -327,13 +327,13 @@ func (e *EthTransaction) VerifySignature() error {
 
 //// AccessList returns the access list of the transaction.
 //func (e *EthTransaction) AccessList() types2.AccessList {
-//	return e.inner.GetAccessList()
+//	return e.Inner.GetAccessList()
 //}
 
 // EncodeRLP implements rlp.Encoder
 func (tx *EthTransaction) EncodeRLP(w io.Writer) error {
 	if tx.GetType() == LegacyTxType {
-		return rlp.Encode(w, tx.inner)
+		return rlp.Encode(w, tx.Inner)
 	}
 	// It's an EIP-2718 typed TX envelope.
 	buf := encodeBufferPool.Get().(*bytes.Buffer)
@@ -348,7 +348,7 @@ func (tx *EthTransaction) EncodeRLP(w io.Writer) error {
 // encodeTyped writes the canonical encoding of a typed transaction to w.
 func (tx *EthTransaction) encodeTyped(w *bytes.Buffer) error {
 	w.WriteByte(tx.GetType())
-	return rlp.Encode(w, tx.inner)
+	return rlp.Encode(w, tx.Inner)
 }
 
 // MarshalBinary returns the canonical encoding of the transaction.
@@ -356,7 +356,7 @@ func (tx *EthTransaction) encodeTyped(w *bytes.Buffer) error {
 // transactions, it returns the type and payload.
 func (tx *EthTransaction) MarshalBinary() ([]byte, error) {
 	if tx.GetType() == LegacyTxType {
-		return rlp.EncodeToBytes(tx.inner)
+		return rlp.EncodeToBytes(tx.Inner)
 	}
 	var buf bytes.Buffer
 	err := tx.encodeTyped(&buf)
@@ -434,10 +434,10 @@ func (tx *EthTransaction) decodeTyped(b []byte) (TxData, error) {
 	}
 }
 
-// setDecoded sets the inner transaction and size after decoding.
+// setDecoded sets the Inner transaction and size after decoding.
 func (tx *EthTransaction) setDecoded(inner TxData, size int) {
-	tx.inner = inner
-	tx.time = time.Now()
+	tx.Inner = inner
+	tx.Time = time.Now()
 	if size > 0 {
 		tx.size.Store(size)
 	}
@@ -475,7 +475,7 @@ func (e *EthTransaction) FromCallArgs(callArgs CallArgs) {
 		inner.AccessList = *callArgs.AccessList
 	}
 
-	e.inner = inner
+	e.Inner = inner
 }
 
 func (tx *EthTransaction) ToMessage() etherTypes.Message {
