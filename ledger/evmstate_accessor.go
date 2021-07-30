@@ -132,6 +132,7 @@ func (l *ComplexStateLedger) AddEVMPreimage(hash common.Hash, data []byte) {
 
 func (l *ComplexStateLedger) PrepareEVM(hash common.Hash, index int) {
 	l.thash = types.NewHash(hash.Bytes())
+	l.logger.Info("PrepareEVM: " + l.thash.String())
 	l.txIndex = index
 	l.accessList = NewAccessList()
 }
