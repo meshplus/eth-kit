@@ -24,15 +24,15 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/crypto/blake2b"
 	"github.com/ethereum/go-ethereum/crypto/bls12381"
 	"github.com/ethereum/go-ethereum/crypto/bn256"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/meshplus/bitxhub-model/constant"
 	"github.com/meshplus/bitxhub-model/pb"
 	"math/big"
-	"strings"
-
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
 )
@@ -52,50 +52,37 @@ func (ic *interchain) RequiredGas(input []byte) uint64 {
 }
 
 func (ic *interchain) Run(input []byte, caller common.Address, evm *EVM) ([]byte, error) {
-	// todo(jz): check caller is in bvm ledger
-	typ, _ := abi.NewType("string", "", nil)
-	unpacked, err := (abi.Arguments{{Type: typ}, {Type: typ}, {Type: typ}, {Type: typ}, {Type: typ}}).Unpack(input[:])
+	typString, _ := abi.NewType("string", "", nil)
+	unpacked, err := (abi.Arguments{
+		{Type: typString},
+		{Type: typString},
+		{Type: typString},
+		{Type: typString},
+		{Type: typString}}).Unpack(input[:])
 	if err != nil {
 		return nil, err
 	}
-	serviceId := unpacked[0].(string)
-	funcs := unpacked[1].(string)
-	args := unpacked[2].(string)
-	argsCb := unpacked[3].(string)
-	argsRb := unpacked[4].(string)
+	var pbArgs []*pb.Arg
+	//from
+	pbArgs = append(pbArgs, &pb.Arg{Type: pb.Arg_String, Value: []byte(fmt.Sprintf("%s:%s:%s", evm.chainConfig.ChainID.String(), evm.chainConfig.ChainID.String(), caller.String()))})
+	//to
+	pbArgs = append(pbArgs, &pb.Arg{Type: pb.Arg_String, Value: []byte(unpacked[0].(string))})
+	//funcs
+	pbArgs = append(pbArgs, &pb.Arg{Type: pb.Arg_String, Value: []byte(unpacked[1].(string))})
+	//args
+	pbArgs = append(pbArgs, &pb.Arg{Type: pb.Arg_String, Value: []byte(unpacked[2].(string))})
+	//argsCb
+	pbArgs = append(pbArgs, &pb.Arg{Type: pb.Arg_String, Value: []byte(unpacked[3].(string))})
+	//argsRb
+	pbArgs = append(pbArgs, &pb.Arg{Type: pb.Arg_String, Value: []byte(unpacked[4].(string))})
 
-	splitFuncs := strings.Split(funcs, ",")
-	if len(splitFuncs) != 3 {
-		return nil, fmt.Errorf("funcs should be (func,funcCb,funcRb)")
-	}
-	content := &pb.Content{
-		Func:     splitFuncs[0],
-		Args:     argsToByteArray(strings.Split(args, ",")),
-		Callback: splitFuncs[1],
-		ArgsCb:   argsToByteArray(strings.Split(argsCb, ",")),
-		Rollback: splitFuncs[2],
-		ArgsRb:   argsToByteArray(strings.Split(argsRb, ",")),
-	}
-	contData, err := content.Marshal()
+	ip := &pb.InvokePayload{Method: "EmitInterchain", Args: pbArgs}
+	ipData, err := ip.Marshal()
 	if err != nil {
 		return nil, err
 	}
-	ibtp := &pb.IBTP{
-		From:    fmt.Sprintf("%s:%s", evm.chainConfig.ChainID.String(), caller.String()),
-		To:      serviceId,
-		Type:    pb.IBTP_INTERCHAIN,
-		Payload: contData,
-	}
-
-	return evm.Bvm.HandleIBTP(ibtp)
-}
-
-func argsToByteArray(args []string) [][]byte {
-	var contentArgs [][]byte
-	for _, arg := range args {
-		contentArgs = append(contentArgs, []byte(arg))
-	}
-	return contentArgs
+	evm.StateDB.AddEVMLog(&types.Log{Address: common.HexToAddress(constant.InterBrokerContractAddr.String()), Data: ipData})
+	return nil, nil
 }
 
 // PrecompiledContractsHomestead contains the default set of pre-compiled Ethereum
