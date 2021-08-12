@@ -263,7 +263,7 @@ func (s *ComplexStateLedger) Clear() {
 
 func (s *ComplexStateLedger) AddEvent(event *pb.Event) {
 	var events []*pb.Event
-	hash := event.TxHash.String()
+	hash := s.thash.String()
 	value, ok := s.events.Load(hash)
 	if ok {
 		events = value.([]*pb.Event)
