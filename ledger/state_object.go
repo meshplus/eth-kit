@@ -378,8 +378,10 @@ func (s *StateObject) updateTrie(db state.Database) state.Trie {
 		s.originStorage[key] = value
 
 		if value == nil {
+			fmt.Println("delete:", s.address.String(), []byte(key))
 			s.setError(tr.TryDelete([]byte(key)))
 		} else {
+			fmt.Println("update:", s.address.String(), []byte(key), value)
 			// Encoding []byte cannot fail, ok to ignore the error.
 			s.setError(tr.TryUpdate([]byte(key), value))
 		}

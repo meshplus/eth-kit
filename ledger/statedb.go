@@ -18,6 +18,7 @@
 package ledger
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math/big"
 	"sort"
@@ -199,6 +200,7 @@ func (s *ComplexStateLedger) QueryByPrefix(address *types2.Address, prefix strin
 }
 
 func (s *ComplexStateLedger) FlushDirtyData() (map[string]IAccount, *types2.Hash) {
+	s.logger.Warnf("FlushDirtyData: root hash %s", s.trie.Hash().String())
 	accounts := make(map[string]IAccount)
 
 	if s.dbErr != nil {
@@ -238,6 +240,8 @@ func (s *ComplexStateLedger) FlushDirtyData() (map[string]IAccount, *types2.Hash
 		if err := account.Unmarshal(leaf); err != nil {
 			return nil
 		}
+		leafH := sha256.Sum256(leaf)
+		s.logger.Warnf("commit leaf %v, parent %v", types2.NewHash(leafH[:]).String(), parent.String())
 		if account.Root != emptyRoot {
 			s.db.TrieDB().Reference(account.Root, parent)
 		}
@@ -647,6 +651,7 @@ func (s *ComplexStateLedger) Finalise(deleteEmptyObjects bool) {
 // It is called in between transactions to get the root hash that
 // goes into transaction receipts.
 func (s *ComplexStateLedger) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
+	s.logger.Warnf("before IntermediateRoot s.trie.Hash(): %v", s.trie.Hash().String())
 	// Finalise all the dirty storage states and write them into the tries
 	s.Finalise(deleteEmptyObjects)
 
@@ -663,8 +668,12 @@ func (s *ComplexStateLedger) IntermediateRoot(deleteEmptyObjects bool) common.Ha
 	usedAddrs := make([][]byte, 0, len(s.stateObjectsPending))
 	for addr := range s.stateObjectsPending {
 		if obj := s.stateObjects[addr]; obj.deleted {
+			s.logger.Warnf("delete account: %v", obj.address.String())
 			s.deleteStateObject(obj)
 		} else {
+			val, _ := obj.data.Marshal()
+			hash := sha256.Sum256(val)
+			s.logger.Warnf("update account: %v, %v, %v", obj.address.String(), types2.NewHash(hash[:]).String(), obj.data)
 			s.updateStateObject(obj)
 		}
 		usedAddrs = append(usedAddrs, types2.NewAddressByStr(addr).Bytes()) // Copy needed for closure
@@ -672,6 +681,7 @@ func (s *ComplexStateLedger) IntermediateRoot(deleteEmptyObjects bool) common.Ha
 	if len(s.stateObjectsPending) > 0 {
 		s.stateObjectsPending = make(map[string]struct{})
 	}
+	s.logger.Warnf("after IntermediateRoot s.trie.Hash(): %v", s.trie.Hash().String())
 	return s.trie.Hash()
 }
 
