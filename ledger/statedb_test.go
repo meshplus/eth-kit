@@ -228,6 +228,8 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 2, len(result))
 
+	fmt.Println(result)
+
 	_, stateRoot := transState.FlushDirtyData()
 	_ = transState.Commit(0, nil, stateRoot)
 

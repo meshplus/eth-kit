@@ -261,6 +261,15 @@ func (s *StateObject) Query(prefix string) (bool, [][]byte) {
 		keys   = make(map[string]struct{})
 	)
 
+	for k, v := range s.dirtyStorage {
+		if bytes.HasPrefix([]byte(k), []byte(prefix)) {
+			if _, ok := keys[k]; !ok {
+				keys[k] = struct{}{}
+				result = append(result, v)
+			}
+		}
+	}
+
 	for k, v := range s.pendingStorage {
 		if bytes.HasPrefix([]byte(k), []byte(prefix)) {
 			if _, ok := keys[k]; !ok {
