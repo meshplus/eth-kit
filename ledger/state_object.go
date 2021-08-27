@@ -279,15 +279,6 @@ func (s *StateObject) Query(prefix string) (bool, [][]byte) {
 		}
 	}
 
-	for k, v := range s.originStorage {
-		if bytes.HasPrefix([]byte(k), []byte(prefix)) {
-			if _, ok := keys[k]; !ok {
-				keys[k] = struct{}{}
-				result = append(result, v)
-			}
-		}
-	}
-
 	iterator := s.getTrie(s.db.db).NodeIterator(nil)
 	it := trie.NewIterator(iterator)
 
