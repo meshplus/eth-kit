@@ -256,14 +256,39 @@ func (s *StateObject) SubBalance(amount *big.Int) {
 }
 
 func (s *StateObject) Query(prefix string) (bool, [][]byte) {
-	var result [][]byte
+	var (
+		result [][]byte
+		keys   = make(map[string]struct{})
+	)
+
+	for k, v := range s.dirtyStorage {
+		if bytes.HasPrefix([]byte(k), []byte(prefix)) {
+			if _, ok := keys[k]; !ok {
+				keys[k] = struct{}{}
+				result = append(result, v)
+			}
+		}
+	}
+
+	for k, v := range s.pendingStorage {
+		if bytes.HasPrefix([]byte(k), []byte(prefix)) {
+			if _, ok := keys[k]; !ok {
+				keys[k] = struct{}{}
+				result = append(result, v)
+			}
+		}
+	}
+
 	iterator := s.getTrie(s.db.db).NodeIterator(nil)
 	it := trie.NewIterator(iterator)
 
 	for it.Next() {
 		key := s.trie.GetKey(it.Key)
 		if bytes.HasPrefix(key, []byte(prefix)) {
-			result = append(result, it.Value)
+			if _, ok := keys[string(key)]; !ok {
+				keys[string(key)] = struct{}{}
+				result = append(result, it.Value)
+			}
 		}
 	}
 	return len(result) != 0, result
