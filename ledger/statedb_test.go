@@ -222,6 +222,12 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	transState.SetState(addr, []byte("key"), []byte("value"))
 	transState.SetState(addr, []byte("key1"), []byte("value2"))
 	transState.SetState(addr, []byte("abc"), []byte("value2"))
+	transState.SetNonce(addr, 1)
+
+	ok, result := transState.QueryByPrefix(addr, "k")
+	assert.True(t, ok)
+	assert.Equal(t, 2, len(result))
+
 	_, stateRoot := transState.FlushDirtyData()
 	_ = transState.Commit(0, nil, stateRoot)
 
@@ -233,7 +239,7 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, "value", string(val))
 
-	ok, result := transState.QueryByPrefix(addr, "k")
+	ok, result = transState.QueryByPrefix(addr, "k")
 	assert.True(t, ok)
 	assert.Equal(t, 2, len(result))
 
