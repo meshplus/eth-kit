@@ -230,7 +230,8 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	transState.SetState(addr, []byte("abc"), []byte("value2"))
 	transState.SetNonce(addr, 1)
 
-	ok, result = transState.QueryByPrefix(addr, "k")
+
+	ok, result := transState.QueryByPrefix(addr, "k")
 	assert.True(t, ok)
 	assert.Equal(t, 2, len(result))
 

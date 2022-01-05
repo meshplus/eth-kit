@@ -21,13 +21,12 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/meshplus/eth-kit/ledger"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/meshplus/eth-kit/ledger"
 )
 
 /*
@@ -69,7 +68,7 @@ type Message interface {
 	Value() *big.Int
 
 	Nonce() uint64
-	CheckNonce() bool
+	IsFake() bool
 	Data() []byte
 	AccessList() types.AccessList
 }
@@ -199,7 +198,7 @@ func (st *StateTransition) buyGas() error {
 
 func (st *StateTransition) preCheck() error {
 	// Make sure this transaction's nonce is correct.
-	if st.msg.CheckNonce() {
+	if !st.msg.IsFake() {
 		stNonce := st.state.GetEVMNonce(st.msg.From())
 		if msgNonce := st.msg.Nonce(); stNonce < msgNonce {
 			return fmt.Errorf("%w: address %v, tx: %d state: %d", core.ErrNonceTooHigh,

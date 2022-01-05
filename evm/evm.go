@@ -119,7 +119,7 @@ type EVM struct {
 	Context BlockContext
 	TxContext
 	// StateDB gives access to the underlying state
-	StateDB ledger.StateDB
+	StateDB ledger.StateLedger
 	// Depth is the current call stack
 	depth int
 
@@ -145,7 +145,7 @@ type EVM struct {
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
-func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb ledger.StateDB, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
+func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb ledger.StateLedger, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
 	evm := &EVM{
 		Context:      blockCtx,
 		TxContext:    txCtx,
@@ -154,22 +154,6 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb ledger.StateDB, chai
 		chainConfig:  chainConfig,
 		chainRules:   chainConfig.Rules(blockCtx.BlockNumber),
 		interpreters: make([]Interpreter, 0, 1),
-	}
-
-	if chainConfig.IsEWASM(blockCtx.BlockNumber) {
-		// to be implemented by EVM-C and Wagon PRs.
-		// if vmConfig.EWASMInterpreter != "" {
-		//  extIntOpts := strings.Split(vmConfig.EWASMInterpreter, ":")
-		//  path := extIntOpts[0]
-		//  options := []string{}
-		//  if len(extIntOpts) > 1 {
-		//    options = extIntOpts[1..]
-		//  }
-		//  evm.interpreters = append(evm.interpreters, NewEVMVCInterpreter(evm, vmConfig, options))
-		// } else {
-		// 	evm.interpreters = append(evm.interpreters, NewEWASMInterpreter(evm, vmConfig))
-		// }
-		panic("No supported ewasm interpreter yet.")
 	}
 
 	// vmConfig.EVMInterpreter will be used by EVM-C, it won't be checked here
@@ -182,7 +166,7 @@ func NewEVM(blockCtx BlockContext, txCtx TxContext, statedb ledger.StateDB, chai
 
 // Reset resets the EVM with a new transaction context.Reset
 // This is not threadsafe and should only be done very cautiously.
-func (evm *EVM) Reset(txCtx TxContext, statedb ledger.StateDB) {
+func (evm *EVM) Reset(txCtx TxContext, statedb ledger.StateLedger) {
 	evm.TxContext = txCtx
 	evm.StateDB = statedb
 }
@@ -244,7 +228,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	}
 
 	if isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = RunPrecompiledContract(p, input, gas, caller.Address(), evm)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
@@ -302,7 +286,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = RunPrecompiledContract(p, input, gas, caller.Address(), evm)
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and set the code that is to be used by the EVM.
@@ -338,7 +322,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = RunPrecompiledContract(p, input, gas, caller.Address(), evm)
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and make initialise the delegate values
@@ -382,7 +366,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	evm.StateDB.AddEVMBalance(addr, big0)
 
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = RunPrecompiledContract(p, input, gas, caller.Address(), evm)
 	} else {
 		// At this point, we use a copy of address. If we don't, the go compiler will
 		// leak the 'contract' to the outer scope, and make allocation for 'contract'
