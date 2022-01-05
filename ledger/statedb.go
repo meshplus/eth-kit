@@ -589,8 +589,6 @@ func (s *ComplexStateLedger) Snapshot() int {
 
 // RevertToSnapshot reverts all state changes made since the given revision.
 func (s *ComplexStateLedger) RevertToSnapshot(revid int) {
-	s.logger.Warnf("revert tx %s", s.thash.String())
-
 	// Find the snapshot in the stack of valid snapshots.
 	idx := sort.Search(len(s.validRevisions), func(i int) bool {
 		return s.validRevisions[i].id >= revid
