@@ -219,10 +219,17 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	assert.Nil(t, err)
 
 	addr := types2.NewAddress([]byte{1})
+	ok, result := transState.QueryByPrefix(addr, "k")
+	assert.False(t, ok)
+	assert.Equal(t, 0, len(result))
+
+	fmt.Println(result)
+
 	transState.SetState(addr, []byte("key"), []byte("value"))
 	transState.SetState(addr, []byte("key1"), []byte("value2"))
 	transState.SetState(addr, []byte("abc"), []byte("value2"))
 	transState.SetNonce(addr, 1)
+
 
 	ok, result := transState.QueryByPrefix(addr, "k")
 	assert.True(t, ok)
