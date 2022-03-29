@@ -323,7 +323,13 @@ func (e *EthTransaction) VerifySignature() error {
 	if e.GetFrom() == nil {
 		return fmt.Errorf("verify signature failed")
 	}
-
+	addr, err := e.sender()
+	if err != nil {
+		return fmt.Errorf("verify signature failed")
+	}
+	if !bytes.Equal(addr.Bytes(), e.GetFrom().Bytes()) {
+		return fmt.Errorf("invalid signature")
+	}
 	return nil
 }
 
