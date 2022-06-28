@@ -341,10 +341,10 @@ func (s *ComplexStateLedger) Error() error {
 func (s *ComplexStateLedger) AddLog(log *pb.EvmLog) {
 	s.journal.append(addLogChange{txhash: s.thash})
 
-	log.TxHash = s.thash
+	log.TransactionHash = s.thash
 	log.BlockHash = s.bhash
-	log.TxIndex = uint64(s.txIndex)
-	log.Index = uint64(s.logSize)
+	log.TransactionIndex = uint64(s.txIndex)
+	log.LogIndex = uint64(s.logSize)
 	log.BlockNumber = s.height
 	s.logs[s.thash.String()] = append(s.logs[s.thash.String()], log)
 	s.logSize++
