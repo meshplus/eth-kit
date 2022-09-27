@@ -145,10 +145,11 @@ func (s *ComplexStateLedger) GetState(address *types2.Address, key []byte) (bool
 	return false, nil
 }
 
-func (s *ComplexStateLedger) SetState(address *types2.Address, key []byte, value []byte) {
+// SetState todo(lrx): ComplexStateLedger is not support parallel excutor tx
+func (s *ComplexStateLedger) SetState(address *types2.Address, key []byte, value []byte, _ interface{}) {
 	stateObject := s.GetOrCreateAccount(address)
 	if stateObject != nil {
-		stateObject.SetState(key, value)
+		stateObject.SetState(key, value, nil)
 	}
 }
 
