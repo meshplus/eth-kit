@@ -2,6 +2,7 @@ package types
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -222,7 +223,15 @@ func (e *EthTransaction) MarshalWithFlag() ([]byte, error) {
 		return nil, err
 	}
 
-	txData := append([]byte{1}, data...)
+	size := len(data) + 8
+	sizeByte := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sizeByte, uint64(size))
+	timeByte := make([]byte, 8)
+	binary.LittleEndian.PutUint64(timeByte, uint64(e.GetTimeStamp()))
+
+	txData := append([]byte{1}, sizeByte...)
+	txData = append(txData, timeByte...)
+	txData = append(txData, data...)
 
 	return txData, nil
 }
@@ -249,7 +258,17 @@ func (e *EthTransaction) MarshalTo(buf []byte) (int, error) {
 }
 
 func (e *EthTransaction) Unmarshal(buf []byte) error {
-	return e.UnmarshalBinary(buf)
+	size := int(binary.LittleEndian.Uint64(buf[0:8]))
+	if size + 8 != len(buf) {
+		return e.UnmarshalBinary(buf)
+	}
+	timestamp := int64(binary.LittleEndian.Uint64(buf[8:16]))
+	err := e.UnmarshalBinary(buf[16:])
+	if err != nil {
+		return err
+	}
+	e.Time = time.Unix(0, timestamp)
+	return nil
 }
 
 // Type returns the transaction type.
@@ -258,7 +277,7 @@ func (e *EthTransaction) GetType() byte {
 }
 
 func (e *EthTransaction) SizeWithFlag() int {
-	return e.Size() + 1
+	return e.Size() + 1 + 8 + 8
 }
 
 func (e *EthTransaction) GetSignature() []byte {
