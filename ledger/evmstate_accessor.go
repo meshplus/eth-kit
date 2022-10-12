@@ -75,7 +75,7 @@ func (l *ComplexStateLedger) GetEVMState(addr common.Address, hash common.Hash) 
 }
 
 func (l *ComplexStateLedger) SetEVMState(addr common.Address, key, value common.Hash) {
-	l.SetState(types.NewAddress(addr.Bytes()), key.Bytes(), value.Bytes())
+	l.SetState(types.NewAddress(addr.Bytes()), key.Bytes(), value.Bytes(), nil)
 }
 
 func (l *ComplexStateLedger) SuisideEVM(addr common.Address) bool {

@@ -136,7 +136,8 @@ func (s *StateObject) GetCommittedState(key []byte) []byte {
 	return value
 }
 
-func (s *StateObject) SetState(key []byte, value []byte) {
+// SetState todo(lrx): ComplexStateLedger is not support parallel excutor tx
+func (s *StateObject) SetState(key []byte, value []byte, _ interface{}) {
 	// If the new value is the same as old, don't set
 	ok, prev := s.GetState(key)
 	if ok && bytes.Equal(prev, value) {

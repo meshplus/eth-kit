@@ -61,7 +61,7 @@ type StateAccessor interface {
 	GetState(*types.Address, []byte) (bool, []byte)
 
 	// SetState
-	SetState(*types.Address, []byte, []byte)
+	SetState(*types.Address, []byte, []byte, interface{})
 
 	// AddState
 	AddState(*types.Address, []byte, []byte)
@@ -98,7 +98,7 @@ type IAccount interface {
 
 	GetCommittedState(key []byte) []byte
 
-	SetState(key []byte, value []byte)
+	SetState(key []byte, value []byte, changer interface{})
 
 	AddState(key []byte, value []byte)
 
