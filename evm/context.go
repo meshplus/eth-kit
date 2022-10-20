@@ -20,7 +20,7 @@ type ChainContext interface {
 }
 
 // NewEVMBlockContext creates a new context for use in the EVM.
-func NewEVMBlockContext(number uint64, timestamp uint64, db ledger.StateDB, ledger ledger.ChainLedger, admin string) BlockContext {
+func NewEVMBlockContext(number, timestamp, maxCodeSize uint64, db ledger.StateDB, ledger ledger.ChainLedger, admin string) BlockContext {
 	// If we don't have an explicit author (i.e. not mining), extract from the header
 	// var beneficiary common.Address
 	// if author == nil {
@@ -37,6 +37,7 @@ func NewEVMBlockContext(number uint64, timestamp uint64, db ledger.StateDB, ledg
 		Time:        new(big.Int).SetUint64(timestamp),
 		Difficulty:  big.NewInt(0x2000),
 		GasLimit:    0x2fefd8,
+		MaxCodeSize: maxCodeSize,
 	}
 }
 
