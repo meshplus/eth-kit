@@ -223,14 +223,20 @@ func (e *EthTransaction) MarshalWithFlag() ([]byte, error) {
 		return nil, err
 	}
 
-	size := len(data) + 8
+	// if trigger marshal ethTx, timeStamp and txHash must been assigned at the same time,
+	// both assigned in api sendRawTransaction
+	size := len(data) + 8 + types.HashLength
 	sizeByte := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sizeByte, uint64(size))
+
+	hashByte := e.hash.Load().(*types.Hash).Bytes()
+
 	timeByte := make([]byte, 8)
 	binary.LittleEndian.PutUint64(timeByte, uint64(e.GetTimeStamp()))
 
 	txData := append([]byte{1}, sizeByte...)
 	txData = append(txData, timeByte...)
+	txData = append(txData, hashByte...)
 	txData = append(txData, data...)
 
 	return txData, nil
@@ -258,12 +264,25 @@ func (e *EthTransaction) MarshalTo(buf []byte) (int, error) {
 }
 
 func (e *EthTransaction) Unmarshal(buf []byte) error {
+	// input buf had already removed the flag of transaction type
 	size := int(binary.LittleEndian.Uint64(buf[0:8]))
-	if size + 8 != len(buf) {
+	// if timeStamp and hash have been assigned, buf composed of the following parts:
+	// buf[0:8] is the byte of tx size,
+	// buf[8:16] is the byte of timestamp,
+	// buf[16:48] is the hash byte,
+	// buf[48:] is the txData.
+	// size record timestamp, hash and txData
+	if size+8 != len(buf) {
 		return e.UnmarshalBinary(buf)
 	}
+
+	// if firstly arrived in api, timeStamp and hash is not assigned,
+	// we should trigger UnmarshalBinary to assign timestamp
 	timestamp := int64(binary.LittleEndian.Uint64(buf[8:16]))
-	err := e.UnmarshalBinary(buf[16:])
+	e.hash.Store(types.NewHash(buf[16 : 16+types.HashLength]))
+
+	// unmarshal tx inner
+	err := e.UnmarshalBinary(buf[16+types.HashLength:])
 	if err != nil {
 		return err
 	}
@@ -277,7 +296,8 @@ func (e *EthTransaction) GetType() byte {
 }
 
 func (e *EthTransaction) SizeWithFlag() int {
-	return e.Size() + 1 + 8 + 8
+	// TxData + TxTypeFlag + TxDataSize + TimeStamp + TxHash
+	return e.Size() + 1 + 8 + 8 + types.HashLength
 }
 
 func (e *EthTransaction) GetSignature() []byte {
