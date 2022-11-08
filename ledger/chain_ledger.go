@@ -12,13 +12,13 @@ type ChainLedger interface {
 	PutBlock(height uint64, block *pb.Block) error
 
 	// GetBlock get block with height
-	GetBlock(height uint64) (*pb.Block, error)
+	GetBlock(height uint64, fullTx bool) (*pb.Block, error)
 
 	// GetBlockSign get the signature of block
 	GetBlockSign(height uint64) ([]byte, error)
 
 	// GetBlockByHash get the block using block hash
-	GetBlockByHash(hash *types.Hash) (*pb.Block, error)
+	GetBlockByHash(hash *types.Hash, fullTx bool) (*pb.Block, error)
 
 	// GetTransaction get the transaction using transaction hash
 	GetTransaction(hash *types.Hash) (pb.Transaction, error)

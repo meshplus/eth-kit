@@ -134,6 +134,9 @@ func (e *EthTransaction) sender() (*types.Address, error) {
 			}
 			return addr, nil
 		}
+		if signer.chainIdMul == nil {
+			InitEIP155Signer(e.GetChainID())
+		}
 		V = new(big.Int).Sub(V, signer.chainIdMul)
 		V.Sub(V, big.NewInt(8))
 	case AccessListTxType:
