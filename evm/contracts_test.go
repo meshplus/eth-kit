@@ -185,7 +185,7 @@ func benchmarkPrecompiled(addr string, test precompiledTest, bench *testing.B) {
 			return
 		}
 		if common.Bytes2Hex(res) != test.Expected {
-			bench.Error(fmt.Sprintf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res)))
+			bench.Errorf("Expected %v, got %v", test.Expected, common.Bytes2Hex(res))
 			return
 		}
 	})
@@ -391,4 +391,3 @@ func BenchmarkPrecompiledBLS12381G2MultiExpWorstCase(b *testing.B) {
 	}
 	benchmarkPrecompiled("0f", testcase, b)
 }
-

@@ -132,9 +132,7 @@ func (s *ComplexStateLedger) GetBalance(address *types2.Address) *big.Int {
 
 func (s *ComplexStateLedger) SetBalance(address *types2.Address, b *big.Int) {
 	stateObject := s.GetOrCreateAccount(address)
-	if stateObject != nil {
-		stateObject.SetBalance(b)
-	}
+	stateObject.SetBalance(b)
 }
 
 func (s *ComplexStateLedger) GetState(address *types2.Address, key []byte) (bool, []byte) {
@@ -148,23 +146,17 @@ func (s *ComplexStateLedger) GetState(address *types2.Address, key []byte) (bool
 // SetState todo(lrx): ComplexStateLedger is not support parallel excutor tx
 func (s *ComplexStateLedger) SetState(address *types2.Address, key []byte, value []byte, _ interface{}) {
 	stateObject := s.GetOrCreateAccount(address)
-	if stateObject != nil {
-		stateObject.SetState(key, value, nil)
-	}
+	stateObject.SetState(key, value, nil)
 }
 
 func (s *ComplexStateLedger) AddState(address *types2.Address, key []byte, value []byte) {
 	stateObject := s.GetOrCreateAccount(address)
-	if stateObject != nil {
-		stateObject.AddState(key, value)
-	}
+	stateObject.AddState(key, value)
 }
 
 func (s *ComplexStateLedger) SetCode(address *types2.Address, code []byte) {
 	stateObject := s.GetOrCreateAccount(address)
-	if stateObject != nil {
-		stateObject.SetCodeAndHash(code)
-	}
+	stateObject.SetCodeAndHash(code)
 }
 
 func (s *ComplexStateLedger) GetCode(address *types2.Address) []byte {
@@ -177,9 +169,7 @@ func (s *ComplexStateLedger) GetCode(address *types2.Address) []byte {
 
 func (s *ComplexStateLedger) SetNonce(address *types2.Address, nonce uint64) {
 	stateObject := s.GetOrCreateAccount(address)
-	if stateObject != nil {
-		stateObject.SetNonce(nonce)
-	}
+	stateObject.SetNonce(nonce)
 }
 
 func (s *ComplexStateLedger) GetNonce(address *types2.Address) uint64 {
@@ -451,17 +441,13 @@ func (s *ComplexStateLedger) HasSuicided(addr *types2.Address) bool {
 // AddBalance adds amount to the account associated with addr.
 func (s *ComplexStateLedger) AddBalance(addr *types2.Address, amount *big.Int) {
 	stateObject := s.GetOrCreateAccount(addr)
-	if stateObject != nil {
-		stateObject.AddBalance(amount)
-	}
+	stateObject.AddBalance(amount)
 }
 
 // SubBalance subtracts amount from the account associated with addr.
 func (s *ComplexStateLedger) SubBalance(addr *types2.Address, amount *big.Int) {
 	stateObject := s.GetOrCreateAccount(addr)
-	if stateObject != nil {
-		stateObject.SubBalance(amount)
-	}
+	stateObject.SubBalance(amount)
 }
 
 // Suicide marks the given account as suicided.

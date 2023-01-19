@@ -27,7 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/trie"
 	types2 "github.com/meshplus/bitxhub-kit/types"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +46,7 @@ func TestUpdateLeaks(t *testing.T) {
 		state.AddBalance(addr, big.NewInt(int64(11*i)))
 		state.SetNonce(addr, uint64(42*i))
 		if i%2 == 0 {
-			state.SetState(addr, []byte{i, i, i}, []byte{i, i, i, i})
+			state.SetState(addr, []byte{i, i, i}, []byte{i, i, i, i}, nil)
 		}
 		if i%3 == 0 {
 			state.SetCode(addr, []byte{i, i, i, i, i})
@@ -80,8 +79,8 @@ func TestIntermediateLeaks(t *testing.T) {
 		state.SetBalance(addr, big.NewInt(int64(11*i)+int64(tweak)))
 		state.SetNonce(addr, uint64(42*i+tweak))
 		if i%2 == 0 {
-			state.SetState(addr, []byte{i, i, i, 0}, common.Hash{}.Bytes())
-			state.SetState(addr, []byte{i, i, i, tweak}, common.Hash{i, i, i, i, tweak}.Bytes())
+			state.SetState(addr, []byte{i, i, i, 0}, common.Hash{}.Bytes(), nil)
+			state.SetState(addr, []byte{i, i, i, tweak}, common.Hash{i, i, i, i, tweak}.Bytes(), nil)
 		}
 		if i%3 == 0 {
 			state.SetCode(addr, []byte{i, i, i, i, i, tweak})
@@ -160,7 +159,7 @@ func TestNew(t *testing.T) {
 	code := []byte{1, 2, 3}
 	transState.SetCode(addr, code)
 
-	transState.SetState(addr, []byte("key"), []byte("value"))
+	transState.SetState(addr, []byte("key"), []byte("value"), nil)
 
 	_, transRoot := transState.FlushDirtyData()
 	err := transState.Commit(0, nil, transRoot)
@@ -186,11 +185,11 @@ func TestNew2(t *testing.T) {
 	transState1, _ := New(&types2.Hash{}, db, nil)
 
 	addr := types2.NewAddress([]byte{1})
-	transState.SetState(addr, []byte("key"), []byte("value"))
+	transState.SetState(addr, []byte("key"), []byte("value"), nil)
 	_, transRoot := transState.FlushDirtyData()
 	_ = transState.Commit(0, nil, transRoot)
 
-	transState.SetState(addr, []byte("key1"), []byte("value2"))
+	transState.SetState(addr, []byte("key1"), []byte("value2"), nil)
 	_, transRoot2 := transState.FlushDirtyData()
 	_ = transState.Commit(0, nil, transRoot2)
 	//err := transState.Database().TrieDB().Commit(common.BytesToHash(root2.Bytes()), false, nil)
@@ -209,7 +208,7 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 	require.Nil(t, err)
 	storage, err := rawdb.NewLevelDBDatabase(filepath.Join(root, "ledger"), 0, 0, "", false)
 	assert.Nil(t, err)
-	db := state.NewDatabaseWithConfig(storage.(ethdb.Database), &trie.Config{
+	db := state.NewDatabaseWithConfig(storage, &trie.Config{
 		Cache:     256,
 		Journal:   "",
 		Preimages: true,
@@ -225,13 +224,12 @@ func TestComplexStateLedger_QueryByPrefix(t *testing.T) {
 
 	fmt.Println(result)
 
-	transState.SetState(addr, []byte("key"), []byte("value"))
-	transState.SetState(addr, []byte("key1"), []byte("value2"))
-	transState.SetState(addr, []byte("abc"), []byte("value2"))
+	transState.SetState(addr, []byte("key"), []byte("value"), nil)
+	transState.SetState(addr, []byte("key1"), []byte("value2"), nil)
+	transState.SetState(addr, []byte("abc"), []byte("value2"), nil)
 	transState.SetNonce(addr, 1)
 
-
-	ok, result := transState.QueryByPrefix(addr, "k")
+	ok, result = transState.QueryByPrefix(addr, "k")
 	assert.True(t, ok)
 	assert.Equal(t, 2, len(result))
 

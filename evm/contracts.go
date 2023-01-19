@@ -21,6 +21,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -32,7 +34,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/meshplus/bitxhub-model/constant"
 	"github.com/meshplus/bitxhub-model/pb"
-	"math/big"
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
 )
