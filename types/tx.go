@@ -127,9 +127,10 @@ func (tx *AccessListTx) copy() TxData {
 
 // accessors for innerTx.
 
-func (tx *AccessListTx) TxType() byte                    { return AccessListTxType }
-func (tx *AccessListTx) GetChainID() *big.Int            { return tx.ChainID }
-func (tx *AccessListTx) protected() bool                 { return true }
+func (tx *AccessListTx) TxType() byte         { return AccessListTxType }
+func (tx *AccessListTx) GetChainID() *big.Int { return tx.ChainID }
+
+//func (tx *AccessListTx) protected() bool                 { return true }
 func (tx *AccessListTx) GetAccessList() types.AccessList { return tx.AccessList }
 func (tx *AccessListTx) GetData() []byte                 { return tx.Data }
 func (tx *AccessListTx) GetGas() uint64                  { return tx.Gas }
@@ -245,9 +246,10 @@ func (tx *DynamicFeeTx) copy() TxData {
 }
 
 // accessors for innerTx.
-func (tx *DynamicFeeTx) TxType() byte                    { return DynamicFeeTxType }
-func (tx *DynamicFeeTx) GetChainID() *big.Int            { return tx.ChainID }
-func (tx *DynamicFeeTx) protected() bool                 { return true }
+func (tx *DynamicFeeTx) TxType() byte         { return DynamicFeeTxType }
+func (tx *DynamicFeeTx) GetChainID() *big.Int { return tx.ChainID }
+
+//func (tx *DynamicFeeTx) protected() bool                 { return true }
 func (tx *DynamicFeeTx) GetAccessList() types.AccessList { return tx.AccessList }
 func (tx *DynamicFeeTx) GetData() []byte                 { return tx.Data }
 func (tx *DynamicFeeTx) GetGas() uint64                  { return tx.Gas }
@@ -311,8 +313,14 @@ func RlpHash(x interface{}) *common.Hash {
 	sha := hasherPool.Get().(crypto.KeccakState)
 	defer hasherPool.Put(sha)
 	sha.Reset()
-	rlp.Encode(sha, x)
-	sha.Read(h[:])
+	err := rlp.Encode(sha, x)
+	if err != nil {
+		return nil
+	}
+	_, err = sha.Read(h[:])
+	if err != nil {
+		return nil
+	}
 	return &h
 }
 
@@ -324,8 +332,14 @@ func PrefixedRlpHash(prefix byte, x interface{}) *common.Hash {
 	defer hasherPool.Put(sha)
 	sha.Reset()
 	sha.Write([]byte{prefix})
-	rlp.Encode(sha, x)
-	sha.Read(h[:])
+	err := rlp.Encode(sha, x)
+	if err != nil {
+		return nil
+	}
+	_, err = sha.Read(h[:])
+	if err != nil {
+		return nil
+	}
 	return &h
 }
 

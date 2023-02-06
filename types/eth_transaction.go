@@ -250,7 +250,11 @@ func (e *EthTransaction) Size() int {
 		return size.(int)
 	}
 	c := writeCounter(0)
-	rlp.Encode(&c, &e.Inner)
+
+	err := rlp.Encode(&c, &e.Inner)
+	if err != nil {
+		fmt.Println(fmt.Errorf("encode eth tx size err: %s", err))
+	}
 	e.size.Store(int(c))
 	return int(c)
 }
