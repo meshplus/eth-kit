@@ -43,16 +43,16 @@ var (
 	emptyRoot = common.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
 )
 
-type proofList [][]byte
-
-func (n *proofList) Put(key []byte, value []byte) error {
-	*n = append(*n, value)
-	return nil
-}
-
-func (n *proofList) Delete(key []byte) error {
-	panic("not supported")
-}
+//type proofList [][]byte
+//
+//func (n *proofList) Put(key []byte, value []byte) error {
+//	*n = append(*n, value)
+//	return nil
+//}
+//
+//func (n *proofList) Delete(key []byte) error {
+//	panic("not supported")
+//}
 
 var _ StateLedger = (*ComplexStateLedger)(nil)
 

@@ -86,7 +86,7 @@ type StateObject struct {
 	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution
 
 	// Cache flags.
-	// When an object is marked suicided it will be delete from the trie
+	// When an object is marked suicided it will be deleted from the trie
 	// during the "update" phase of the state transition.
 	dirtyCode bool // true if the code was updated
 	suicided  bool
@@ -370,7 +370,7 @@ func (s *StateObject) getTrie(db state.Database) state.Trie {
 
 // finalise moves all dirty storage slots into the pending area to be hashed or
 // committed later. It is invoked at the end of every transaction.
-func (s *StateObject) finalise(prefetch bool) {
+func (s *StateObject) finalise(bool) {
 	slotsToPrefetch := make([][]byte, 0, len(s.dirtyStorage))
 	for key, value := range s.dirtyStorage {
 		s.pendingStorage[key] = value
@@ -387,7 +387,7 @@ func (s *StateObject) finalise(prefetch bool) {
 // It will return nil if the trie has not been loaded and no changes have been made
 func (s *StateObject) updateTrie(db state.Database) state.Trie {
 	// Make sure all dirty slots are finalized into the pending storage area
-	s.finalise(false) // Don't prefetch any more, pull directly if need be
+	//s.finalise(false) // Don't prefetch anymore, pull directly if need be
 	if len(s.pendingStorage) == 0 {
 		return s.trie
 	}

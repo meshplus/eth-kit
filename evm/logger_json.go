@@ -76,7 +76,10 @@ func (l *JSONLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint
 	if !l.cfg.DisableReturnData {
 		log.ReturnData = rData
 	}
-	l.encoder.Encode(log)
+	err = l.encoder.Encode(log)
+	if err != nil {
+		return
+	}
 }
 
 // CaptureEnd is triggered at end of execution.
@@ -88,7 +91,13 @@ func (l *JSONLogger) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, 
 		Err     string              `json:"error,omitempty"`
 	}
 	if err != nil {
-		l.encoder.Encode(endLog{common.Bytes2Hex(output), math.HexOrDecimal64(gasUsed), t, err.Error()})
+		err = l.encoder.Encode(endLog{common.Bytes2Hex(output), math.HexOrDecimal64(gasUsed), t, err.Error()})
+		if err != nil {
+			return
+		}
 	}
-	l.encoder.Encode(endLog{common.Bytes2Hex(output), math.HexOrDecimal64(gasUsed), t, ""})
+	err = l.encoder.Encode(endLog{common.Bytes2Hex(output), math.HexOrDecimal64(gasUsed), t, ""})
+	if err != nil {
+		return
+	}
 }
