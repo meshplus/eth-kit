@@ -18,12 +18,6 @@ package runtime
 
 import (
 	"fmt"
-	"math/big"
-	"os"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -34,6 +28,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
+	"math/big"
+	"os"
+	"strings"
+	"testing"
 )
 
 func TestDefaults(t *testing.T) {
@@ -321,24 +319,24 @@ func TestBlockhash(t *testing.T) {
 	}
 }
 
-type stepCounter struct {
-	inner *vm.JSONLogger
-	steps int
-}
+//type stepCounter struct {
+//	inner *vm.JSONLogger
+//	steps int
+//}
 
-func (s *stepCounter) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
-}
+//func (s *stepCounter) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
+//}
 
-func (s *stepCounter) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, depth int, err error) {
-}
+//func (s *stepCounter) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, depth int, err error) {
+//}
 
-func (s *stepCounter) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) {}
+//func (s *stepCounter) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) {}
 
-func (s *stepCounter) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
-	s.steps++
-	// Enable this for more output
-	//s.inner.CaptureState(env, pc, op, gas, cost, memory, stack, rStack, contract, depth, err)
-}
+//func (s *stepCounter) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
+//	s.steps++
+// Enable this for more output
+//s.inner.CaptureState(env, pc, op, gas, cost, memory, stack, rStack, contract, depth, err)
+//}
 
 // benchmarkNonModifyingCode benchmarks code, but if the code modifies the
 // state, this should not be used, since it does not reset the state between runs.

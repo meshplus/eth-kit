@@ -35,7 +35,6 @@ import (
 	"github.com/meshplus/bitxhub-model/constant"
 	"github.com/meshplus/bitxhub-model/pb"
 	//lint:ignore SA1019 Needed for precompile
-	"golang.org/x/crypto/ripemd160"
 )
 
 // PrecompiledContract is the basic interface for native Go contracts. The implementation
@@ -89,9 +88,9 @@ func (ic *interchain) Run(input []byte, caller common.Address, evm *EVM) ([]byte
 // PrecompiledContractsHomestead contains the default set of pre-compiled Ethereum
 // contracts used in the Frontier and Homestead releases.
 var PrecompiledContractsHomestead = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):   &ecrecover{},
-	common.BytesToAddress([]byte{2}):   &sha256hash{},
-	common.BytesToAddress([]byte{3}):   &ripemd160hash{},
+	common.BytesToAddress([]byte{1}): &ecrecover{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	//common.BytesToAddress([]byte{3}):   &ripemd160hash{},
 	common.BytesToAddress([]byte{4}):   &dataCopy{},
 	common.BytesToAddress([]byte{200}): &interchain{},
 }
@@ -99,9 +98,9 @@ var PrecompiledContractsHomestead = map[common.Address]PrecompiledContract{
 // PrecompiledContractsByzantium contains the default set of pre-compiled Ethereum
 // contracts used in the Byzantium release.
 var PrecompiledContractsByzantium = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):   &ecrecover{},
-	common.BytesToAddress([]byte{2}):   &sha256hash{},
-	common.BytesToAddress([]byte{3}):   &ripemd160hash{},
+	common.BytesToAddress([]byte{1}): &ecrecover{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	//common.BytesToAddress([]byte{3}):   &ripemd160hash{},
 	common.BytesToAddress([]byte{4}):   &dataCopy{},
 	common.BytesToAddress([]byte{5}):   &bigModExp{eip2565: false},
 	common.BytesToAddress([]byte{6}):   &bn256AddByzantium{},
@@ -113,9 +112,9 @@ var PrecompiledContractsByzantium = map[common.Address]PrecompiledContract{
 // PrecompiledContractsIstanbul contains the default set of pre-compiled Ethereum
 // contracts used in the Istanbul release.
 var PrecompiledContractsIstanbul = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):   &ecrecover{},
-	common.BytesToAddress([]byte{2}):   &sha256hash{},
-	common.BytesToAddress([]byte{3}):   &ripemd160hash{},
+	common.BytesToAddress([]byte{1}): &ecrecover{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	//common.BytesToAddress([]byte{3}):   &ripemd160hash{},
 	common.BytesToAddress([]byte{4}):   &dataCopy{},
 	common.BytesToAddress([]byte{5}):   &bigModExp{eip2565: false},
 	common.BytesToAddress([]byte{6}):   &bn256AddIstanbul{},
@@ -128,9 +127,9 @@ var PrecompiledContractsIstanbul = map[common.Address]PrecompiledContract{
 // PrecompiledContractsBerlin contains the default set of pre-compiled Ethereum
 // contracts used in the Berlin release.
 var PrecompiledContractsBerlin = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):   &ecrecover{},
-	common.BytesToAddress([]byte{2}):   &sha256hash{},
-	common.BytesToAddress([]byte{3}):   &ripemd160hash{},
+	common.BytesToAddress([]byte{1}): &ecrecover{},
+	common.BytesToAddress([]byte{2}): &sha256hash{},
+	//common.BytesToAddress([]byte{3}):   &ripemd160hash{},
 	common.BytesToAddress([]byte{4}):   &dataCopy{},
 	common.BytesToAddress([]byte{5}):   &bigModExp{eip2565: true},
 	common.BytesToAddress([]byte{6}):   &bn256AddIstanbul{},
@@ -260,20 +259,20 @@ func (c *sha256hash) Run(input []byte, caller common.Address, evm *EVM) ([]byte,
 }
 
 // RIPEMD160 implemented as a native contract.
-type ripemd160hash struct{}
+//type ripemd160hash struct{}
 
 // RequiredGas returns the gas required to execute the pre-compiled contract.
 //
 // This method does not require any overflow checking as the input size gas costs
 // required for anything significant is so high it's impossible to pay for.
-func (c *ripemd160hash) RequiredGas(input []byte) uint64 {
-	return uint64(len(input)+31)/32*params.Ripemd160PerWordGas + params.Ripemd160BaseGas
-}
-func (c *ripemd160hash) Run(input []byte, caller common.Address, evm *EVM) ([]byte, error) {
-	ripemd := ripemd160.New()
-	ripemd.Write(input)
-	return common.LeftPadBytes(ripemd.Sum(nil), 32), nil
-}
+//func (c *ripemd160hash) RequiredGas(input []byte) uint64 {
+//	return uint64(len(input)+31)/32*params.Ripemd160PerWordGas + params.Ripemd160BaseGas
+//}
+//func (c *ripemd160hash) Run(input []byte, caller common.Address, evm *EVM) ([]byte, error) {
+//	ripemd := ripemd160.New()
+//	ripemd.Write(input)
+//	return common.LeftPadBytes(ripemd.Sum(nil), 32), nil
+//}
 
 // data copy implemented as a native contract.
 type dataCopy struct{}
@@ -771,6 +770,7 @@ func (c *bls12381G1MultiExp) RequiredGas(input []byte) uint64 {
 	return (uint64(k) * params.Bls12381G1MulGas * discount) / 1000
 }
 
+//nolint:dupl
 func (c *bls12381G1MultiExp) Run(input []byte, caller common.Address, evm *EVM) ([]byte, error) {
 	// Implements EIP-2537 G1MultiExp precompile.
 	// G1 multiplication call expects `160*k` bytes as an input that is interpreted as byte concatenation of `k` slices each of them being a byte concatenation of encoding of G1 point (`128` bytes) and encoding of a scalar value (`32` bytes).
@@ -800,7 +800,10 @@ func (c *bls12381G1MultiExp) Run(input []byte, caller common.Address, evm *EVM) 
 
 	// Compute r = e_0 * p_0 + e_1 * p_1 + ... + e_(k-1) * p_(k-1)
 	r := g.New()
-	g.MultiExp(r, points, scalars)
+	_, err = g.MultiExp(r, points, scalars)
+	if err != nil {
+		return nil, err
+	}
 
 	// Encode the G1 point to 128 bytes
 	return g.EncodePoint(r), nil
@@ -902,6 +905,7 @@ func (c *bls12381G2MultiExp) RequiredGas(input []byte) uint64 {
 	return (uint64(k) * params.Bls12381G2MulGas * discount) / 1000
 }
 
+//nolint:dupl
 func (c *bls12381G2MultiExp) Run(input []byte, caller common.Address, evm *EVM) ([]byte, error) {
 	// Implements EIP-2537 G2MultiExp precompile logic
 	// > G2 multiplication call expects `288*k` bytes as an input that is interpreted as byte concatenation of `k` slices each of them being a byte concatenation of encoding of G2 point (`256` bytes) and encoding of a scalar value (`32` bytes).
@@ -931,7 +935,10 @@ func (c *bls12381G2MultiExp) Run(input []byte, caller common.Address, evm *EVM) 
 
 	// Compute r = e_0 * p_0 + e_1 * p_1 + ... + e_(k-1) * p_(k-1)
 	r := g.New()
-	g.MultiExp(r, points, scalars)
+	_, err = g.MultiExp(r, points, scalars)
+	if err != nil {
+		return nil, err
+	}
 
 	// Encode the G2 point to 256 bytes.
 	return g.EncodePoint(r), nil
